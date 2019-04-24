@@ -5,8 +5,8 @@ Like [go-histdbimport](https://github.com/drewis/go-histdbimport), but 6000x fas
 ### Usage
 
 ```sh
-yarn install
-yarn run insert-all
+npm install
+npm run insert-all
 ```
 
 Will import `~/.zsh_history` into `~/.histdb/zsh-history.db`.
