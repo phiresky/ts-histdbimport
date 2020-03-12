@@ -13,7 +13,7 @@ Will import `~/.zsh_history` into `~/.histdb/zsh-history.db`.
 
 You can set env vars to change the input / output filename:
 
-`$ history_file=zh database=x.db yarn run insert-all`
+`$ history_file=zh database=x.db npm run insert-all`
 
 ### Benchmark
 
