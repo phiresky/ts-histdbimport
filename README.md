@@ -5,6 +5,8 @@ Like [go-histdbimport](https://github.com/drewis/go-histdbimport), but 6000x fas
 ### Usage
 
 ```sh
+git clone https://github.com/phiresky/ts-histdbimport
+cd ts-histdbimport
 npm install
 npm run insert-all
 ```
