@@ -4,6 +4,14 @@ Like [go-histdbimport](https://github.com/drewis/go-histdbimport), but 6000x fas
 
 ### Usage
 
+Make sure you have node installed, then run
+
+```sh
+npx histdbimport
+```
+
+Alternatively, get the source from this repo and run it from here:
+
 ```sh
 git clone https://github.com/phiresky/ts-histdbimport
 cd ts-histdbimport
