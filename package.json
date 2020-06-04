@@ -1,9 +1,11 @@
 {
+	"name": "histdbimport",
+	"version": "1.0.1",
 	"scripts": {
 		"insert-all": "ts-node insert-all.ts"
 	},
 	"bin": {
-		"ts-histdbimport": "dist/insert-all.js"
+		"histdbimport": "dist/insert-all.js"
 	},
 	"dependencies": {
 		"better-sqlite3": "^6.0.1"
@@ -32,8 +34,7 @@
 	},
 	"lint-staged": {
 		"*.{js,json,css,less,scss,ts,tsx,md}": [
-			"prettier --write",
-			"git add"
+			"prettier --write"
 		]
 	},
 	"files": [

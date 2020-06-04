@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import Sqlite from "better-sqlite3"
 import { createReadStream } from "fs"
 import { hostname } from "os"
