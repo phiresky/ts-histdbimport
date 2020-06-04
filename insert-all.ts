@@ -64,7 +64,9 @@ async function readHistory() {
         FROM commands, places
         WHERE commands.argv = @command AND places.host = @host AND places.dir = @dir`)
 
+	console.time("took")
 	db.exec("BEGIN")
+	let count = 0
 	for await (const entryStr of readEntries()) {
 		const result = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/.exec(
 			entryStr,
@@ -80,8 +82,11 @@ async function readHistory() {
 		}
 		commandInsert.run(fullEntry)
 		historyInsert.run(fullEntry)
+		count++
 	}
 	db.exec("COMMIT")
+	console.timeEnd("took")
+	console.log(`inserted ${count} history entries`)
 }
 
 readHistory()
