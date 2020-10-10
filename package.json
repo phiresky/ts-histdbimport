@@ -1,6 +1,6 @@
 {
 	"name": "histdbimport",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"scripts": {
 		"insert-all": "ts-node insert-all.ts"
 	},
