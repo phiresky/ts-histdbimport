@@ -11,8 +11,8 @@ if (!homeDir) throw Error("no home dir")
 const hostName = process.env.host || hostname()
 
 // don't know these
-const sessionNum = "0"
-const returnValue = "0"
+const sessionNum = "-1"
+const returnValue = "-1"
 const runDir = join(homeDir, "unknown")
 
 const databaseFile =
@@ -31,19 +31,51 @@ interface FullEntry extends Entry {
 	dir: string
 }
 async function* readEntries() {
-	const history = createInterface({
-		input: createReadStream(historyFile),
-	})
+	// read whole file so we can split it by '\n'
+	const history = await (async function () {
+		const history_stream = createReadStream(historyFile)
+
+		let history_data_chunks = []
+		for await (let data_chunk of history_stream) {
+			history_data_chunks.push(data_chunk)
+		}
+
+		return Buffer.concat(history_data_chunks).toString()
+	})()
 
 	let entry = ""
-	for await (const line of history) {
-		entry += line
-		if (entry[entry.length - 1] == "\\") {
-			entry = entry.slice(0, -1) + "\n"
-		} else {
-			yield entry
-			entry = ""
+	let last_char = ""
+	let line = 0
+	for await (const char of history) {
+		if (char == "\n") {
+			line += 1
 		}
+
+		// if the current char is a newline that it isn't escaped then we are
+		// at the end of the history entry so parse it into a Entry object,
+		// return it, and reset out state
+		if (char == "\n" && last_char != "\\") {
+			const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+
+			const result = history_entry_regex.exec(entry)
+
+			// the regex didn't match on the history entry
+			if (result == null) {
+				console.log(result)
+				throw Error(
+					`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
+				)
+			}
+
+			yield result.groups as Entry
+
+			entry = ""
+			last_char = ""
+		} else {
+			entry += char
+		}
+
+		last_char = char
 	}
 }
 async function readHistory() {
@@ -67,14 +99,9 @@ async function readHistory() {
 	console.time("took")
 	db.exec("BEGIN")
 	let count = 0
-	for await (const entryStr of readEntries()) {
-		const result = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/.exec(
-			entryStr,
-		)
-		if (!result) throw Error(`invalid history syntax: ${entryStr}`)
-		const entryE = result.groups as Entry
+	for await (const entry of readEntries()) {
 		const fullEntry: FullEntry = {
-			...entryE,
+			...entry,
 			session: sessionNum,
 			returnValue,
 			dir: runDir,
