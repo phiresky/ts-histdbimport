@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import Sqlite from "better-sqlite3"
-import { createReadStream } from "fs"
+import { readFileSync } from "fs"
 import { hostname } from "os"
 import { join } from "path"
 import { createInterface } from "readline"
@@ -32,16 +32,7 @@ interface FullEntry extends Entry {
 }
 async function* readEntries() {
 	// read whole file so we can split it by '\n'
-	const history = await (async function () {
-		const history_stream = createReadStream(historyFile)
-
-		let history_data_chunks = []
-		for await (let data_chunk of history_stream) {
-			history_data_chunks.push(data_chunk)
-		}
-
-		return Buffer.concat(history_data_chunks).toString()
-	})()
+	const history = readFileSync(historyFile, { encoding: "utf8" })
 
 	let entry = ""
 	let last_char = ""
