@@ -31,42 +31,40 @@ interface FullEntry extends Entry {
 	dir: string
 }
 async function* readEntries() {
-	// read whole file so we can split it by '\n'
-	const history = readFileSync(historyFile, { encoding: "utf8" })
+	// read the whole history file from disk and split it on every newline that
+	// isn't escaped (preceded by a backslash)
+	const history = readFileSync(historyFile, { encoding: "utf8" }).split(
+		/(?<!\\)\n/,
+	)
 
-	let entry = ""
-	let last_char = ""
 	let line = 0
-	for await (const char of history) {
-		if (char == "\n") {
-			line += 1
+	for await (const entry of history) {
+		// increase the line count by the number of newlines that entry
+		// contains
+		line += entry.split("\n").length
+
+		// if a whole history entry is empty just skip it
+		//
+		// I don't know if this could normally happen  in a history file since
+		// I don't think zsh ever adds empty lines to history. The reason this
+		// was added was because .split adds an empty entry to the end of the
+		// array
+		if (entry == "") {
+			continue
 		}
 
-		// if the current char is a newline that it isn't escaped then we are
-		// at the end of the history entry so parse it into a Entry object,
-		// return it, and reset out state
-		if (char == "\n" && last_char != "\\") {
-			const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+		const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+		const result = history_entry_regex.exec(entry)
 
-			const result = history_entry_regex.exec(entry)
-
-			// the regex didn't match on the history entry
-			if (result == null) {
-				console.log(result)
-				throw Error(
-					`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
-				)
-			}
-
-			yield result.groups as Entry
-
-			entry = ""
-			last_char = ""
-		} else {
-			entry += char
+		// the regex didn't match on the entry
+		if (result == null) {
+			console.log(result)
+			throw Error(
+				`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
+			)
 		}
 
-		last_char = char
+		yield result.groups as Entry
 	}
 }
 async function readHistory() {
