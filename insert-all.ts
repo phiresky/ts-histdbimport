@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import Sqlite from "better-sqlite3"
-import { createReadStream } from "fs"
+import { readFileSync } from "fs"
 import { hostname } from "os"
 import { join } from "path"
 import { createInterface } from "readline"
@@ -11,8 +11,8 @@ if (!homeDir) throw Error("no home dir")
 const hostName = process.env.host || hostname()
 
 // don't know these
-const sessionNum = "0"
-const returnValue = "0"
+const sessionNum = "-1"
+const returnValue = "-1"
 const runDir = join(homeDir, "unknown")
 
 const databaseFile =
@@ -31,19 +31,40 @@ interface FullEntry extends Entry {
 	dir: string
 }
 async function* readEntries() {
-	const history = createInterface({
-		input: createReadStream(historyFile),
-	})
+	// read the whole history file from disk and split it on every newline that
+	// isn't escaped (preceded by a backslash)
+	const history = readFileSync(historyFile, { encoding: "utf8" }).split(
+		/(?<!\\)\n/,
+	)
 
-	let entry = ""
-	for await (const line of history) {
-		entry += line
-		if (entry[entry.length - 1] == "\\") {
-			entry = entry.slice(0, -1) + "\n"
-		} else {
-			yield entry
-			entry = ""
+	let line = 0
+	for await (const entry of history) {
+		// increase the line count by the number of newlines that entry
+		// contains
+		line += entry.split("\n").length
+
+		// if a whole history entry is empty just skip it
+		//
+		// I don't know if this could normally happen  in a history file since
+		// I don't think zsh ever adds empty lines to history. The reason this
+		// was added was because .split adds an empty entry to the end of the
+		// array
+		if (entry == "") {
+			continue
 		}
+
+		const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+		const result = history_entry_regex.exec(entry)
+
+		// the regex didn't match on the entry
+		if (result == null) {
+			console.log(result)
+			throw Error(
+				`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
+			)
+		}
+
+		yield result.groups as Entry
 	}
 }
 async function readHistory() {
@@ -67,14 +88,9 @@ async function readHistory() {
 	console.time("took")
 	db.exec("BEGIN")
 	let count = 0
-	for await (const entryStr of readEntries()) {
-		const result = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/.exec(
-			entryStr,
-		)
-		if (!result) throw Error(`invalid history syntax: ${entryStr}`)
-		const entryE = result.groups as Entry
+	for await (const entry of readEntries()) {
 		const fullEntry: FullEntry = {
-			...entryE,
+			...entry,
 			session: sessionNum,
 			returnValue,
 			dir: runDir,
