@@ -31,3 +31,5 @@ Importing a history file with 299k entries:
 
 -   go-histdbimport: 9.08 inserts/s (would take 9 hours)
 -   ts-histdbimport: 56500 inserts/s (5.29s total)
+
+With ([#3](https://github.com/phiresky/ts-histdbimport/pulls/3)) it should be even faster, though it now uses more memory. Thanks [@Adk9p](https://github.com/Adk9p)!
