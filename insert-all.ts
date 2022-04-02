@@ -17,7 +17,11 @@ const runDir = join(homeDir, "unknown")
 
 const databaseFile =
 	process.env.database || join(homeDir, ".histdb/zsh-history.db")
-const historyFile = process.env.history_file || join(homeDir, ".zsh_history")
+
+const historyFile =
+	process.env.history_file ||
+	process.env.HISTFILE ||
+	join(homeDir, ".zsh_history")
 
 type Entry = {
 	started: string
