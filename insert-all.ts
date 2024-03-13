@@ -68,9 +68,10 @@ async function* readEntries() {
 				`no history syntax and no command on line ${line} in ${historyFile}: \n"${entry}"`,
 			)
 		}
-		const groups = result.groups
-		if (groups) {
-			const { started = DEFAULT_DATE, duration = DEFAULT_DURATION, command } = groups;
+
+		if (result.groups) {
+			// add default values for started and duration if they are missing
+			const { started = DEFAULT_DATE, duration = DEFAULT_DURATION, command } = result.groups;
 			yield { started, duration, command } as Entry;
 		}
 	}
