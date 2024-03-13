@@ -3,7 +3,6 @@ import Sqlite from "better-sqlite3"
 import { readFileSync } from "fs"
 import { hostname } from "os"
 import { join } from "path"
-import { createInterface } from "readline"
 
 const homeDir = process.env.HOME
 if (!homeDir) throw Error("no home dir")
@@ -58,18 +57,24 @@ async function* readEntries() {
 		}
 
 		const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+		const no_history_entry_regex = /^(?<command>[\s\S]*)$/
 		const result = history_entry_regex.exec(entry)
-
+		const result_nohist = no_history_entry_regex.exec(entry)
 		// the regex didn't match on the entry
-		if (result == null) {
-			console.log(result)
+		if (result == null && result_nohist == null) {
+			console.log("History Not found", result)
+
 			throw Error(
-				`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
+				`no history syntax and no command on line ${line} in ${historyFile}: \n"${entry}"`,
 			)
 		}
-
-		yield result.groups as Entry
+		const groups = result != null ? result.groups : result_nohist?.groups;
+		if (groups) {
+			const { started = '0', duration = '0', command } = groups;
+			yield { started, duration, command } as Entry;
+		}
 	}
+
 }
 async function readHistory() {
 	console.log(`importing history from "${historyFile} into "${databaseFile}"`)
