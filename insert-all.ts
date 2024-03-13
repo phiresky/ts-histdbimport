@@ -13,6 +13,8 @@ const hostName = process.env.host || hostname()
 const sessionNum = "-1"
 const returnValue = "-1"
 const runDir = join(homeDir, "unknown")
+const DEFAULT_DATE = "0"
+const DEFAULT_DURATION = "0"
 
 const databaseFile =
 	process.env.database || join(homeDir, ".histdb/zsh-history.db")
@@ -56,21 +58,21 @@ async function* readEntries() {
 			continue
 		}
 
-		const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
-		const no_history_entry_regex = /^(?<command>[\s\S]*)$/
+		const history_entry_regex = /^(: (?<started>\d+):(?<duration>\d+);)?(?<command>[\s\S]*)$/
+		// const no_history_entry_regex = /^(?<command>[\s\S]*)$/
 		const result = history_entry_regex.exec(entry)
-		const result_nohist = no_history_entry_regex.exec(entry)
-		// the regex didn't match on the entry
-		if (result == null && result_nohist == null) {
-			console.log("History Not found", result)
+		// const result_nohist = no_history_entry_regex.exec(entry)
+		// neither regex matched the entry
+		if (result == null) {
+			console.log(result)
 
 			throw Error(
 				`no history syntax and no command on line ${line} in ${historyFile}: \n"${entry}"`,
 			)
 		}
-		const groups = result != null ? result.groups : result_nohist?.groups;
+		const groups = result.groups
 		if (groups) {
-			const { started = '0', duration = '0', command } = groups;
+			const { started = DEFAULT_DATE, duration = DEFAULT_DURATION, command } = groups;
 			yield { started, duration, command } as Entry;
 		}
 	}
