@@ -59,10 +59,8 @@ async function* readEntries() {
 		}
 
 		const history_entry_regex = /^(: (?<started>\d+):(?<duration>\d+);)?(?<command>[\s\S]*)$/
-		// const no_history_entry_regex = /^(?<command>[\s\S]*)$/
 		const result = history_entry_regex.exec(entry)
-		// const result_nohist = no_history_entry_regex.exec(entry)
-		// neither regex matched the entry
+		// regex didn't match anything
 		if (result == null) {
 			console.log(result)
 
