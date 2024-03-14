@@ -3,7 +3,6 @@ import Sqlite from "better-sqlite3"
 import { readFileSync } from "fs"
 import { hostname } from "os"
 import { join } from "path"
-import { createInterface } from "readline"
 
 const homeDir = process.env.HOME
 if (!homeDir) throw Error("no home dir")
@@ -14,6 +13,8 @@ const hostName = process.env.host || hostname()
 const sessionNum = "-1"
 const returnValue = "-1"
 const runDir = join(homeDir, "unknown")
+const DEFAULT_DATE = "0"
+const DEFAULT_DURATION = "0"
 
 const databaseFile =
 	process.env.database || join(homeDir, ".histdb/zsh-history.db")
@@ -57,19 +58,24 @@ async function* readEntries() {
 			continue
 		}
 
-		const history_entry_regex = /^: (?<started>\d+):(?<duration>\d+);(?<command>[\s\S]*)$/
+		const history_entry_regex = /^(: (?<started>\d+):(?<duration>\d+);)?(?<command>[\s\S]*)$/
 		const result = history_entry_regex.exec(entry)
-
-		// the regex didn't match on the entry
+		// regex didn't match anything
 		if (result == null) {
 			console.log(result)
+
 			throw Error(
-				`invalid history syntax on line ${line} in ${historyFile}: \n"${entry}"`,
+				`no history syntax and no command on line ${line} in ${historyFile}: \n"${entry}"`,
 			)
 		}
 
-		yield result.groups as Entry
+		if (result.groups) {
+			// add default values for started and duration if they are missing
+			const { started = DEFAULT_DATE, duration = DEFAULT_DURATION, command } = result.groups;
+			yield { started, duration, command } as Entry;
+		}
 	}
+
 }
 async function readHistory() {
 	console.log(`importing history from "${historyFile} into "${databaseFile}"`)
